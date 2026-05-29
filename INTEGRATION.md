@@ -2,16 +2,19 @@
 
 This guide explains how to add the inline **SharePreview** plugin (custom native share
 sheet with app icon + title) into an existing Ionic + Capacitor project, and documents
-every non-obvious gotcha discovered while building it.
+every non-obvious pitfall discovered while building it.
 
 ## Target stack
 
-- Ionic 8, Angular (module-based or standalone), Capacitor 8 (SPM-based iOS)
+- Ionic 8, Angular (module-based or standalone), **Capacitor 7** (this branch — iOS on
+  **CocoaPods**). The `main` branch is the Capacitor 8 / Swift Package Manager version.
 - iOS deployment target 13+ (LPLinkMetadata requires iOS 13)
-- Android minSdk 24+, Android 10+ for the title preview
+- Android minSdk 23+, Android 10+ for the title preview
 
-If your app is on Capacitor 6/7 the same approach works, but iOS plugin registration
-differs slightly (see the iOS notes). Verify before applying.
+The plugin **code is identical** across Capacitor 6/7/8 — `CAPBridgedPlugin` +
+`bridge.registerPluginInstance(...)` work on all of them. Only the iOS packaging differs:
+**Cap 7 = CocoaPods**, Cap 8 = SPM. The Cap 7 / CocoaPods specifics and their extra risks
+are called out below (Pitfall #2b).
 
 ---
 
@@ -24,6 +27,7 @@ change your app's routing, business logic, or dependency versions. Overall risk 
 | Area | Risk | Why |
 |---|---|---|
 | iOS view controller + storyboard | Medium | You must register the plugin from a `CAPBridgeViewController` subclass and point the storyboard at it. Touching the storyboard is the highest-risk step. |
+| iOS CocoaPods (Cap 7 only) | Medium | CocoaPods must be installed and `pod install` must run. You must open `App.xcworkspace`, never `App.xcodeproj`, or you get `No such module 'Capacitor'`. See Pitfall #2b. |
 | Android Kotlin enablement | Medium | If your Android project is Java-only, you must enable the Kotlin Gradle plugin. Trivial if you already use Kotlin. |
 | Android FileProvider | Low | Reuse Capacitor's existing provider; do not declare a second one with the same authority. |
 | Everything else (TS bridge, Swift/Kotlin plugin files, icon assets) | Low | Pure additions. |
@@ -44,7 +48,7 @@ Your app owns its own theming; leave it alone.
 src/plugin/share-preview.plugin.ts      TypeScript bridge (registerPlugin)
 src/plugin/share-preview.web.ts          Web fallback (navigator.share)
 ios/App/App/SharePreviewPlugin.swift      iOS native plugin
-ios/App/App/MainViewController.swift       iOS plugin registration (see gotcha #1)
+ios/App/App/MainViewController.swift       iOS plugin registration (see pitfall #1)
 android/.../com/demo/shareplugin/SharePreviewPlugin.kt   Android native plugin
 ```
 Plus icon assets and a few registration edits described below.
@@ -68,7 +72,7 @@ No module/standalone constraints — works in both.
 
 ## 2. iOS integration
 
-### GOTCHA #1 — never name the view controller `ViewController`
+### Pitfall #1 — never name the view controller `ViewController`
 
 Capacitor registers inline plugins from a `CAPBridgeViewController` subclass via
 `capacitorDidLoad()`. The subclass **must not be named `ViewController`**.
@@ -101,11 +105,13 @@ In `Main.storyboard`, point the initial view controller at it **with the module*
 If your app already subclasses `CAPBridgeViewController`, just add the
 `registerPluginInstance` line to your existing `capacitorDidLoad()` and skip the new file.
 
-### GOTCHA #2 — Capacitor 8 SPM uses `CAPBridgedPlugin`, not the `.m` macro
+### Pitfall #2 — registration uses `CAPBridgedPlugin` (not the `.m` macro)
 
-With Swift Package Manager (Capacitor 8 default), the old Objective-C
-`CAP_PLUGIN(...)` bridge file does **not** register the plugin. Use the Swift
-`CAPBridgedPlugin` protocol instead (see `SharePreviewPlugin.swift`):
+Register via the Swift `CAPBridgedPlugin` protocol (see `SharePreviewPlugin.swift`). This
+works on Capacitor 6/7/8 regardless of CocoaPods vs SPM. (On Cap 8 SPM the old Objective-C
+`CAP_PLUGIN(...)` `.m` macro does **not** register the plugin at all; on Cap 7 CocoaPods
+the `.m` macro would also work, but using `CAPBridgedPlugin` keeps the code identical
+across versions.)
 
 ```swift
 @objc(SharePreviewPlugin)
@@ -119,7 +125,34 @@ public class SharePreviewPlugin: CAPPlugin, CAPBridgedPlugin {
 }
 ```
 
-### GOTCHA #3 — add Swift files to the Xcode target properly
+### Pitfall #2b — Capacitor 7 iOS uses CocoaPods (extra risks)
+
+On Capacitor 7, `npx cap add ios` produces a **CocoaPods** project, not SPM. This adds
+several failure modes we hit in practice:
+
+- **CocoaPods must be installed** before `npx cap sync`. If it isn't, `cap sync` silently
+  skips `pod install`, and Xcode then fails with
+  `unable to open base configuration reference file ... Pods-App.debug.xcconfig`.
+  Fix: `brew install cocoapods`, then `npx cap sync` (or `cd ios/App && pod install`).
+- **Open `App.xcworkspace`, NEVER `App.xcodeproj`.** The pods (including `Capacitor`) are
+  only linked in the workspace. Opening the bare project gives
+  `No such module 'Capacitor'` / `Unable to resolve module dependency: 'Capacitor'`.
+  Confirm a **Pods** project appears in the navigator. `npx cap open ios` opens the
+  correct file.
+- **Don't switch a single clone between the Cap 8 (`main`, SPM) and Cap 7
+  (`capacitor-7`, CocoaPods) branches in place.** Git leaves behind the other manager's
+  build artifacts (SPM `Package.resolved`, or `Pods/`), and Xcode picks up the stale
+  state → `No such module 'Capacitor'` even with Pods present. Use a **fresh clone per
+  branch**, or after switching: `rm -rf ios/App/Pods ios/App/App/public && npx cap sync`.
+- If the module error persists after a clean workspace + `pod install`, delete DerivedData
+  (`rm -rf ~/Library/Developer/Xcode/DerivedData/App-*`) and Clean Build Folder. On
+  Xcode 16, also try Build Settings → set **Explicitly Built Modules** to No.
+
+The yellow `Auto property synthesis will not synthesize property … 'CAPBridgedPlugin'`
+warnings come from Capacitor's own pods (e.g. CapacitorKeyboard) — they are harmless and
+not from this plugin.
+
+### Pitfall #3 — add Swift files to the Xcode target properly
 
 Do not hand-edit `project.pbxproj` UUIDs. Either drag the files into the App target in
 Xcode, or use the `xcodeproj` Ruby gem:
@@ -206,7 +239,7 @@ public class MainActivity extends BridgeActivity {
 }
 ```
 
-### GOTCHA #4 — load the icon from a real PNG, not the adaptive mipmap
+### Pitfall #4 — load the icon from a real PNG, not the adaptive mipmap
 
 On API 26+, `R.mipmap.ic_launcher` resolves to **adaptive-icon XML**, which
 `BitmapFactory.decodeResource` cannot decode (returns null → no icon). Also,
@@ -215,14 +248,14 @@ when drawn to a Canvas.
 
 Fix: ship a plain square PNG at `res/drawable/share_icon.png` and decode that directly.
 
-### GOTCHA #5 — title preview needs an image ClipData, not a raw URL
+### Pitfall #5 — title preview needs an image ClipData, not a raw URL
 
 A thumbnail only appears when `ClipData` carries an **image content URI** (MIME
 `image/png`). Putting the URL into `ClipData.newRawUri` does nothing. The plugin writes
 the icon PNG to `cacheDir` and shares it via `FileProvider`, with the real URL/text in
 `EXTRA_TEXT` and the label in `EXTRA_TITLE`.
 
-### GOTCHA #6 — reuse Capacitor's FileProvider
+### Pitfall #6 — reuse Capacitor's FileProvider
 
 Capacitor already declares a `FileProvider` with authority
 `${applicationId}.fileprovider` and `res/xml/file_paths.xml`. Reuse it. Ensure

@@ -17,6 +17,13 @@ an app icon and title in the preview, on both iOS and Android.
   text is still delivered to the receiving app)
 - Web fallback using `navigator.share()`
 
+## Screenshots
+
+| | Share a URL | Share plain text |
+|---|---|---|
+| **iOS** | ![iOS share URL](preview/ios_share_url.png) | ![iOS share text](preview/ios_share_text.png) |
+| **Android** | ![Android share URL](preview/android_share_url.png) | ![Android share text](preview/android_share_text.png) |
+
 ## Project structure
 
 ```
@@ -70,7 +77,7 @@ is intentionally left blank so each developer uses their own.
 ## Integrating into your own app
 
 See **[INTEGRATION.md](INTEGRATION.md)** for a step-by-step guide, a risk assessment, and
-every non-obvious gotcha — including the most important one:
+every non-obvious pitfall — including the most important one:
 
 > **Never name your `CAPBridgeViewController` subclass `ViewController`.** The generic name
 > resolves to the wrong class at runtime and produces a black screen with no web content.
