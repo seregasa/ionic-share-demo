@@ -2,7 +2,7 @@
 
 This guide explains how to add the inline **SharePreview** plugin (custom native share
 sheet with app icon + title) into an existing Ionic + Capacitor project, and documents
-every non-obvious gotcha discovered while building it.
+every non-obvious pitfall discovered while building it.
 
 ## Target stack
 
@@ -44,7 +44,7 @@ Your app owns its own theming; leave it alone.
 src/plugin/share-preview.plugin.ts      TypeScript bridge (registerPlugin)
 src/plugin/share-preview.web.ts          Web fallback (navigator.share)
 ios/App/App/SharePreviewPlugin.swift      iOS native plugin
-ios/App/App/MainViewController.swift       iOS plugin registration (see gotcha #1)
+ios/App/App/MainViewController.swift       iOS plugin registration (see pitfall #1)
 android/.../com/demo/shareplugin/SharePreviewPlugin.kt   Android native plugin
 ```
 Plus icon assets and a few registration edits described below.
@@ -68,7 +68,7 @@ No module/standalone constraints — works in both.
 
 ## 2. iOS integration
 
-### GOTCHA #1 — never name the view controller `ViewController`
+### Pitfall #1 — never name the view controller `ViewController`
 
 Capacitor registers inline plugins from a `CAPBridgeViewController` subclass via
 `capacitorDidLoad()`. The subclass **must not be named `ViewController`**.
@@ -101,7 +101,7 @@ In `Main.storyboard`, point the initial view controller at it **with the module*
 If your app already subclasses `CAPBridgeViewController`, just add the
 `registerPluginInstance` line to your existing `capacitorDidLoad()` and skip the new file.
 
-### GOTCHA #2 — Capacitor 8 SPM uses `CAPBridgedPlugin`, not the `.m` macro
+### Pitfall #2 — Capacitor 8 SPM uses `CAPBridgedPlugin`, not the `.m` macro
 
 With Swift Package Manager (Capacitor 8 default), the old Objective-C
 `CAP_PLUGIN(...)` bridge file does **not** register the plugin. Use the Swift
@@ -119,7 +119,7 @@ public class SharePreviewPlugin: CAPPlugin, CAPBridgedPlugin {
 }
 ```
 
-### GOTCHA #3 — add Swift files to the Xcode target properly
+### Pitfall #3 — add Swift files to the Xcode target properly
 
 Do not hand-edit `project.pbxproj` UUIDs. Either drag the files into the App target in
 Xcode, or use the `xcodeproj` Ruby gem:
@@ -206,7 +206,7 @@ public class MainActivity extends BridgeActivity {
 }
 ```
 
-### GOTCHA #4 — load the icon from a real PNG, not the adaptive mipmap
+### Pitfall #4 — load the icon from a real PNG, not the adaptive mipmap
 
 On API 26+, `R.mipmap.ic_launcher` resolves to **adaptive-icon XML**, which
 `BitmapFactory.decodeResource` cannot decode (returns null → no icon). Also,
@@ -215,14 +215,14 @@ when drawn to a Canvas.
 
 Fix: ship a plain square PNG at `res/drawable/share_icon.png` and decode that directly.
 
-### GOTCHA #5 — title preview needs an image ClipData, not a raw URL
+### Pitfall #5 — title preview needs an image ClipData, not a raw URL
 
 A thumbnail only appears when `ClipData` carries an **image content URI** (MIME
 `image/png`). Putting the URL into `ClipData.newRawUri` does nothing. The plugin writes
 the icon PNG to `cacheDir` and shares it via `FileProvider`, with the real URL/text in
 `EXTRA_TEXT` and the label in `EXTRA_TITLE`.
 
-### GOTCHA #6 — reuse Capacitor's FileProvider
+### Pitfall #6 — reuse Capacitor's FileProvider
 
 Capacitor already declares a `FileProvider` with authority
 `${applicationId}.fileprovider` and `res/xml/file_paths.xml`. Reuse it. Ensure
