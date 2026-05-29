@@ -1,0 +1,37 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Share Sheet Demo</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Example 1 — Share a URL</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      Shares a custom icon and custom title with a URL.
+      (On iOS the subtitle line is the URL's domain — that is the only
+      subtitle iOS can show.)
+      <ion-button expand="block" (click)="shareUrl()" style="margin-top: 12px">
+        Share URL
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Example 2 — Share Plain Text</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      Shares a custom icon and custom title with plain text.
+      (On iOS a plain-text share shows no subtitle — only the title.
+      The text is still delivered to the receiving app.)
+      <ion-button expand="block" color="secondary" (click)="shareText()" style="margin-top: 12px">
+        Share Text
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+
+</ion-content>

@@ -1,0 +1,7 @@
+{
+  "name": "ionic-share-demo",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular"
+}
