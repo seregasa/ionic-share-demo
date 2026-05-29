@@ -33,19 +33,34 @@ android/app/src/main/java/
 android/app/src/main/res/drawable/share_icon.png   Icon used in the share preview
 ```
 
-## Quick start
+## Getting started
+
+### Prerequisites
+
+- Node.js 18+ and npm
+- Ionic CLI: `npm install -g @ionic/cli`
+- iOS: macOS with Xcode 15+ (an iOS Simulator runtime installed via Xcode → Settings →
+  Platforms)
+- Android: Android Studio (with an SDK + emulator or a connected device)
+
+### Clone and run
 
 ```bash
-npm install
-ionic build
-npx cap sync
+git clone https://github.com/seregasa/ionic-share-demo.git
+cd ionic-share-demo
+
+npm install            # install dependencies
+ionic build            # build the web assets into www/ (git-ignored)
+npx cap sync           # copy web assets + plugins into the native projects
 
 npx cap open ios       # Xcode: Clean Build Folder (Shift+Cmd+K), then Run
 npx cap open android   # Android Studio: Sync Gradle, then Run
 ```
 
-Runs on the iOS Simulator and on device. For iOS device builds set your own signing team
-in Xcode (Signing & Capabilities); `DEVELOPMENT_TEAM` is intentionally left blank.
+`www/` and `node_modules/` are intentionally not committed — `ionic build` and
+`npm install` regenerate them. Runs on the iOS Simulator and on device. For iOS device
+builds set your own signing team in Xcode (Signing & Capabilities); `DEVELOPMENT_TEAM`
+is intentionally left blank so each developer uses their own.
 
 ## Integrating into your own app
 
