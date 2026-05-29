@@ -1,7 +1,11 @@
 # Ionic Custom Share Sheet Demo
 
-Ionic 8 + Angular 20 + Capacitor 8 app demonstrating a custom native share sheet with an
-app icon and title in the preview, on both iOS and Android.
+Ionic 8 + Angular 20 + **Capacitor 7** app demonstrating a custom native share sheet with
+an app icon and title in the preview, on both iOS and Android.
+
+> This is the **Capacitor 7** branch. iOS uses CocoaPods (Cap 7 default). The plugin code
+> is identical to the Capacitor 8 version on `main` — only the native project scaffold
+> differs (CocoaPods vs Swift Package Manager).
 
 ## Features
 
@@ -40,7 +44,7 @@ android/app/src/main/res/drawable/share_icon.png   Icon used in the share previe
 - Node.js 18+ and npm
 - Ionic CLI: `npm install -g @ionic/cli`
 - iOS: macOS with Xcode 15+ (an iOS Simulator runtime installed via Xcode → Settings →
-  Platforms)
+  Platforms) and **CocoaPods** (`brew install cocoapods`) — Cap 7 iOS uses CocoaPods
 - Android: Android Studio (with an SDK + emulator or a connected device)
 
 ### Clone and run
@@ -48,6 +52,7 @@ android/app/src/main/res/drawable/share_icon.png   Icon used in the share previe
 ```bash
 git clone https://github.com/seregasa/ionic-share-demo.git
 cd ionic-share-demo
+git checkout capacitor-7   # this Capacitor 7 branch (omit for the Cap 8 version on main)
 
 npm install            # install dependencies
 ionic build            # build the web assets into www/ (git-ignored)
@@ -75,8 +80,10 @@ every non-obvious gotcha — including the most important one:
 
 - `LPLinkMetadata` requires iOS 13+. It has a single text field (`title`); the gray
   subtitle is only ever the URL's host, so plain-text shares show no subtitle.
-- Capacitor 8 uses Swift Package Manager — the plugin registers via the
-  `CAPBridgedPlugin` protocol and `bridge.registerPluginInstance(...)`, not a `.m` macro.
+- The plugin registers via the `CAPBridgedPlugin` protocol and
+  `bridge.registerPluginInstance(...)` in a `CAPBridgeViewController` subclass. This works
+  on Capacitor 6/7/8 regardless of CocoaPods vs SPM (the `main` branch is the Cap 8/SPM
+  version, this branch is Cap 7/CocoaPods — same plugin code).
 - Android loads the icon from a plain PNG (`drawable/share_icon.png`), not the adaptive
   mipmap, and shares it as an image via Capacitor's `FileProvider`.
 - The plugin is **inline** — no npm package to publish.

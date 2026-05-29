@@ -35,7 +35,6 @@ public class SharePreviewPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "share", returnType: CAPPluginReturnPromise)
     ]
 
-    // Pre-rendered squircle icon, built once at load time (the render is the costly part).
     private var shareIcon: UIImage?
 
     override public func load() {
@@ -91,8 +90,6 @@ public class SharePreviewPlugin: CAPPlugin, CAPBridgedPlugin {
             }
 
             if let icon = self.shareIcon {
-                // NSItemProvider(object: UIImage) — proper rich-image icon, renders at
-                // full size. (Raw data/file providers render as a small generic file icon.)
                 metadata.iconProvider = NSItemProvider(object: icon)
             }
 
